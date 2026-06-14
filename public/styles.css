@@ -1013,6 +1013,80 @@ button {
   white-space: pre-wrap;
 }
 
+.explanation-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.explain-button {
+  border-color: var(--ink);
+  background: white;
+}
+
+.explain-button:hover:not(:disabled) {
+  background: var(--acid);
+}
+
+.explain-button.is-loading::before {
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(23, 32, 28, 0.22);
+  border-top-color: var(--ink);
+  border-radius: 50%;
+  animation: spin 700ms linear infinite;
+  content: "";
+}
+
+.explanation-result {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 16px;
+  border: 1px solid rgba(82, 120, 255, 0.22);
+  border-radius: 8px;
+  background: rgba(82, 120, 255, 0.055);
+}
+
+.explanation-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 11px;
+  border-bottom: 1px solid rgba(82, 120, 255, 0.16);
+}
+
+.explanation-heading span,
+.explanation-section span {
+  color: var(--blue);
+  font: 9px/1 var(--mono);
+  text-transform: uppercase;
+}
+
+.explanation-heading strong {
+  font-size: 12px;
+}
+
+.explanation-section p {
+  margin: 6px 0 0;
+  color: #303b35;
+  font-size: 10px;
+  line-height: 1.75;
+  white-space: pre-wrap;
+}
+
+.explanation-key {
+  padding: 11px 12px;
+  border-radius: 6px;
+  background: rgba(213, 255, 67, 0.22);
+}
+
+.explanation-key span {
+  color: var(--ink);
+}
+
 .loading-state,
 .empty-state {
   display: grid;

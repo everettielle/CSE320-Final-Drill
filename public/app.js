@@ -7,6 +7,7 @@ const state = {
   answers: readStorage(STORAGE_ANSWERS),
   results: readStorage(STORAGE_RESULTS),
   loading: new Set(),
+  explaining: new Set(),
   lectureFilter: "all",
   statusFilter: "all",
   search: "",
@@ -118,6 +119,12 @@ function bindEvents() {
   });
 
   elements.questionList.addEventListener("click", (event) => {
+    const explainButton = event.target.closest("[data-explain]");
+    if (explainButton) {
+      explainQuestion(explainButton.dataset.explain);
+      return;
+    }
+
     const button = event.target.closest("[data-grade]");
     if (!button) return;
     gradeQuestion(button.dataset.grade);
@@ -231,7 +238,7 @@ function questionCard(question) {
           >${isLoading ? "Claude 채점 중" : result ? "다시 채점하기" : "AI 채점하기"}</button>
         </div>
       </div>
-      ${result ? resultPanel(result) : ""}
+      ${result ? resultPanel(result, question.id, state.explaining.has(question.id)) : ""}
     </article>
   `;
 }
@@ -279,7 +286,7 @@ function answerField(question, field) {
   `;
 }
 
-function resultPanel(result) {
+function resultPanel(result, questionId, isExplaining) {
   return `
     <section class="feedback-result">
       <div class="score-block">
@@ -303,6 +310,38 @@ function resultPanel(result) {
           <summary>모범 답안 보기</summary>
           <p>${escapeHtml(result.ideal_answer)}</p>
         </details>
+        <div class="explanation-actions">
+          <button
+            class="button explain-button ${isExplaining ? "is-loading" : ""}"
+            data-explain="${questionId}"
+            type="button"
+            ${isExplaining ? "disabled" : ""}
+          >${isExplaining ? "Claude가 해설 중" : result.explanation ? "해설 다시 받기" : "왜 이 답이 맞나요?"}</button>
+        </div>
+        ${result.explanation ? explanationPanel(result.explanation) : ""}
+      </div>
+    </section>
+  `;
+}
+
+function explanationPanel(explanation) {
+  return `
+    <section class="explanation-result">
+      <div class="explanation-heading">
+        <span>WHY IT WORKS</span>
+        <strong>정답 해설</strong>
+      </div>
+      <div class="explanation-section">
+        <span>답이 성립하는 이유</span>
+        <p>${escapeHtml(explanation.explanation)}</p>
+      </div>
+      <div class="explanation-section">
+        <span>내 답안과 비교</span>
+        <p>${escapeHtml(explanation.comparison)}</p>
+      </div>
+      <div class="explanation-section explanation-key">
+        <span>기억할 핵심</span>
+        <p>${escapeHtml(explanation.key_concepts)}</p>
       </div>
     </section>
   `;
@@ -351,6 +390,45 @@ async function gradeQuestion(questionId, { quiet = false } = {}) {
     state.loading.delete(questionId);
     renderQuestions();
     updateStats();
+  }
+}
+
+async function explainQuestion(questionId) {
+  const question = state.questions.find((item) => item.id === questionId);
+  if (!question || !state.results[questionId] || state.explaining.has(questionId)) {
+    return false;
+  }
+
+  const answer = serializeAnswer(question);
+  if (!answer) return false;
+
+  state.explaining.add(questionId);
+  renderQuestions();
+
+  try {
+    const response = await fetch("/api/explain", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ questionId, answer }),
+    });
+    const payload = await response.json();
+    if (!response.ok) {
+      throw new Error(payload.error || "해설 요청에 실패했습니다.");
+    }
+    if (!state.results[questionId] || serializeAnswer(question) !== answer) {
+      showToast("답안이 변경되어 해설을 저장하지 않았습니다.");
+      return false;
+    }
+    state.results[questionId].explanation = payload;
+    writeStorage(STORAGE_RESULTS, state.results);
+    showToast(`${questionId} 정답 해설을 만들었습니다.`);
+    return true;
+  } catch (error) {
+    showToast(error.message);
+    return false;
+  } finally {
+    state.explaining.delete(questionId);
+    renderQuestions();
   }
 }
 
