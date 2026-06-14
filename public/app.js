@@ -51,6 +51,7 @@ async function init() {
     const status = await statusResponse.json();
     state.lectures = exam.lectures;
     state.questions = exam.questions;
+    migrateStoredAnswers();
     setApiStatus(status);
     render();
   } catch (error) {
@@ -83,12 +84,15 @@ function bindEvents() {
   });
 
   elements.questionList.addEventListener("input", (event) => {
-    const textarea = event.target.closest("textarea[data-question-id]");
-    if (!textarea) return;
+    const field = event.target.closest("[data-answer-field]");
+    if (!field) return;
 
-    const id = textarea.dataset.questionId;
-    const card = textarea.closest(".question-card");
-    state.answers[id] = textarea.value;
+    const id = field.dataset.questionId;
+    const question = state.questions.find((item) => item.id === id);
+    const card = field.closest(".question-card");
+    const answer = answerObject(question);
+    answer[field.dataset.fieldId] = field.value;
+    state.answers[id] = answer;
     if (state.results[id]) {
       delete state.results[id];
       writeStorage(STORAGE_RESULTS, state.results);
@@ -97,16 +101,17 @@ function bindEvents() {
     }
     const gradeButton = card?.querySelector("[data-grade]");
     if (gradeButton) {
-      gradeButton.disabled = !textarea.value.trim();
+      gradeButton.disabled = !hasAnswer(question);
       gradeButton.textContent = "AI 채점하기";
     }
-    const characterCount = card?.querySelector(".answer-label small");
-    if (characterCount) {
-      characterCount.textContent = `${textarea.value.length.toLocaleString()} / 12,000`;
+    field.closest(".answer-field")?.classList.toggle("complete", Boolean(field.value.trim()));
+    const completion = card?.querySelector(".answer-label small");
+    if (completion) {
+      completion.textContent = completionLabel(question);
     }
     const stateBadge = card?.querySelector(".question-state");
     if (stateBadge) {
-      stateBadge.textContent = textarea.value.trim() ? "작성됨" : "미작성";
+      stateBadge.textContent = stateLabel(question);
     }
     writeStorage(STORAGE_ANSWERS, state.answers);
     updateStats();
@@ -185,17 +190,14 @@ function renderQuestions() {
 }
 
 function questionCard(question) {
-  const answer = state.answers[question.id] || "";
   const result = state.results[question.id];
   const isLoading = state.loading.has(question.id);
   const verdictClass = result?.verdict || "";
-  const stateLabel = isLoading
+  const statusLabel = isLoading
     ? "채점 중"
     : result
       ? verdictLabel(result.verdict)
-      : answer.trim()
-        ? "작성됨"
-        : "미작성";
+      : stateLabel(question);
 
   return `
     <article class="question-card ${verdictClass} ${isLoading ? "loading" : ""}" id="${question.id}">
@@ -208,33 +210,72 @@ function questionCard(question) {
           </div>
           <h3>${escapeHtml(question.title)}</h3>
         </div>
-        <span class="question-state">${stateLabel}</span>
+        <span class="question-state">${statusLabel}</span>
       </header>
       <div class="question-content">${question.questionHtml}</div>
       <div class="answer-panel">
-        <label class="answer-label" for="answer-${question.id}">
+        <div class="answer-label">
           <span>나의 답안</span>
-          <small>${answer.length.toLocaleString()} / 12,000</small>
-        </label>
-        <textarea
-          id="answer-${question.id}"
-          data-question-id="${question.id}"
-          maxlength="12000"
-          spellcheck="false"
-          placeholder="번호를 맞춰 답안을 작성하세요. 예: 1) ISA  2) ABI ..."
-        >${escapeHtml(answer)}</textarea>
+          <small>${completionLabel(question)}</small>
+        </div>
+        <div class="answer-sheet">
+          ${question.answerFields.map((field) => answerField(question, field)).join("")}
+        </div>
         <div class="answer-actions">
           <span class="save-state">LOCAL / AUTO-SAVED</span>
           <button
             class="button grade-button ${isLoading ? "is-loading" : ""}"
             data-grade="${question.id}"
             type="button"
-            ${isLoading || !answer.trim() ? "disabled" : ""}
+            ${isLoading || !hasAnswer(question) ? "disabled" : ""}
           >${isLoading ? "Claude 채점 중" : result ? "다시 채점하기" : "AI 채점하기"}</button>
         </div>
       </div>
       ${result ? resultPanel(result) : ""}
     </article>
+  `;
+}
+
+function answerField(question, field) {
+  const value = answerObject(question)[field.id] || "";
+  const complete = value.trim() ? "complete" : "";
+  const typeLabel = {
+    short: "SHORT",
+    code: "CODE",
+    long: "EXPLAIN",
+  }[field.type];
+  const input =
+    field.type === "long"
+      ? `<textarea
+          data-answer-field
+          data-question-id="${question.id}"
+          data-field-id="${field.id}"
+          maxlength="4000"
+          rows="3"
+          placeholder="핵심 근거와 함께 설명하세요."
+        >${escapeHtml(value)}</textarea>`
+      : `<input
+          data-answer-field
+          data-question-id="${question.id}"
+          data-field-id="${field.id}"
+          maxlength="4000"
+          type="text"
+          value="${escapeHtml(value)}"
+          spellcheck="false"
+          placeholder="${field.type === "code" ? "코드 또는 식을 입력하세요." : "답을 입력하세요."}"
+        />`;
+
+  return `
+    <label class="answer-field answer-field-${field.type} ${complete}">
+      <span class="field-number">${String(field.label).padStart(2, "0")}</span>
+      <span class="field-body">
+        <span class="field-heading">
+          <span class="field-prompt">${field.promptHtml}</span>
+          <span class="field-type">${typeLabel}</span>
+        </span>
+        ${input}
+      </span>
+    </label>
   `;
 }
 
@@ -273,7 +314,7 @@ function filteredQuestions() {
       state.lectureFilter === "all" || question.lectureId === state.lectureFilter;
     const matchesStatus =
       state.statusFilter === "all" ||
-      (state.statusFilter === "unanswered" && !(state.answers[question.id] || "").trim()) ||
+      (state.statusFilter === "unanswered" && !hasAnswer(question)) ||
       (state.statusFilter === "graded" && Boolean(state.results[question.id]));
     const haystack = `${question.id} ${question.title} ${question.lectureTitle}`.toLowerCase();
     const matchesSearch = !state.search || haystack.includes(state.search);
@@ -282,7 +323,8 @@ function filteredQuestions() {
 }
 
 async function gradeQuestion(questionId, { quiet = false } = {}) {
-  const answer = (state.answers[questionId] || "").trim();
+  const question = state.questions.find((item) => item.id === questionId);
+  const answer = serializeAnswer(question);
   if (!answer || state.loading.has(questionId)) return false;
 
   state.loading.add(questionId);
@@ -315,7 +357,7 @@ async function gradeQuestion(questionId, { quiet = false } = {}) {
 async function gradeAllAnswered() {
   if (state.gradingAll) return;
   const targets = state.questions
-    .filter((question) => (state.answers[question.id] || "").trim())
+    .filter((question) => hasAnswer(question))
     .map((question) => question.id);
 
   if (!targets.length) {
@@ -348,7 +390,7 @@ async function gradeAllAnswered() {
 
 function updateStats() {
   const answered = state.questions.filter((question) =>
-    (state.answers[question.id] || "").trim(),
+    hasAnswer(question),
   ).length;
   const graded = state.questions.filter((question) => state.results[question.id]).length;
   const correct = state.questions.filter(
@@ -365,6 +407,71 @@ function updateStats() {
   elements.filterAllCount.textContent = total;
   elements.filterUnansweredCount.textContent = total - answered;
   elements.filterGradedCount.textContent = graded;
+}
+
+function migrateStoredAnswers() {
+  let changed = false;
+
+  for (const question of state.questions) {
+    const stored = state.answers[question.id];
+    if (typeof stored !== "string") continue;
+    state.answers[question.id] = parseLegacyAnswer(stored, question.answerFields);
+    changed = true;
+  }
+
+  if (changed) writeStorage(STORAGE_ANSWERS, state.answers);
+}
+
+function parseLegacyAnswer(answer, fields) {
+  const structured = {};
+  const markers = [...answer.matchAll(/(?:^|\s)(\d+)[).]\s*/g)];
+
+  for (const [index, marker] of markers.entries()) {
+    const fieldId = marker[1];
+    if (!fields.some((field) => field.id === fieldId)) continue;
+    const start = marker.index + marker[0].length;
+    const end = markers[index + 1]?.index ?? answer.length;
+    structured[fieldId] = answer.slice(start, end).trim();
+  }
+
+  if (!Object.keys(structured).length && answer.trim() && fields[0]) {
+    structured[fields[0].id] = answer.trim();
+  }
+
+  return structured;
+}
+
+function answerObject(question) {
+  const stored = state.answers[question.id];
+  return stored && typeof stored === "object" ? stored : {};
+}
+
+function filledFieldCount(question) {
+  const answer = answerObject(question);
+  return question.answerFields.filter((field) => (answer[field.id] || "").trim()).length;
+}
+
+function hasAnswer(question) {
+  return filledFieldCount(question) > 0;
+}
+
+function completionLabel(question) {
+  return `${filledFieldCount(question)} / ${question.answerFields.length} 문항 작성`;
+}
+
+function stateLabel(question) {
+  const filled = filledFieldCount(question);
+  if (!filled) return "미작성";
+  if (filled === question.answerFields.length) return "작성 완료";
+  return `${filled}/${question.answerFields.length} 작성`;
+}
+
+function serializeAnswer(question) {
+  const answer = answerObject(question);
+  return question.answerFields
+    .filter((field) => (answer[field.id] || "").trim())
+    .map((field) => `${field.label}) ${answer[field.id].trim()}`)
+    .join("\n");
 }
 
 function setApiStatus(status) {

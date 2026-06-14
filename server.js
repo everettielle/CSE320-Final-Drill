@@ -60,8 +60,8 @@ app.post("/api/grade", async (request, response) => {
   if (!studentAnswer) {
     return response.status(400).json({ error: "먼저 답안을 작성해 주세요." });
   }
-  if (studentAnswer.length > 12_000) {
-    return response.status(400).json({ error: "답안은 12,000자 이하로 작성해 주세요." });
+  if (studentAnswer.length > 30_000) {
+    return response.status(400).json({ error: "답안은 30,000자 이하로 작성해 주세요." });
   }
   if (!apiKey) {
     return response.status(503).json({

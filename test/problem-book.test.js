@@ -28,3 +28,17 @@ test("does not expose reference answers in the public exam payload", () => {
   assert.equal("questionMarkdown" in publicExam.questions[0], false);
   assert.match(publicExam.questions[0].questionHtml, /hardware and software/);
 });
+
+test("extracts structured answer fields for every sub-question", () => {
+  const book = parseProblemBook(markdown);
+  const p31 = book.questions.find((question) => question.id === "P3.1");
+  const p61 = book.questions.find((question) => question.id === "P6.1");
+
+  assert.ok(book.questions.every((question) => question.answerFields.length > 0));
+  assert.equal(p31.answerFields.length, 6);
+  assert.match(p31.answerFields[1].promptHtml, /sizeof\(s\)/);
+  assert.deepEqual(
+    p61.answerFields.map((field) => field.type),
+    ["code", "code", "code", "code", "long", "short"],
+  );
+});
