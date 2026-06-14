@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Claude Sonnet 4.6이 채점하는 CSE320 기말고사 연습 페이지"
+    />
+    <title>CSE320 Final Drill</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="ambient ambient-one"></div>
+    <div class="ambient ambient-two"></div>
+
+    <header class="topbar">
+      <a class="brand" href="#">
+        <span class="brand-mark">CSE</span>
+        <span>
+          <strong>320 Final Drill</strong>
+          <small>Systems Fundamentals II</small>
+        </span>
+      </a>
+
+      <div class="topbar-actions">
+        <div class="api-status" id="api-status">
+          <span class="status-dot"></span>
+          <span>채점 서버 확인 중</span>
+        </div>
+        <button class="button button-secondary" id="clear-results" type="button">
+          결과 초기화
+        </button>
+        <button class="button button-primary" id="grade-all" type="button">
+          <span>작성 답안 일괄 채점</span>
+          <span class="button-arrow">↗</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="shell">
+      <aside class="sidebar">
+        <section class="progress-card">
+          <div class="progress-ring" id="progress-ring">
+            <div>
+              <strong id="progress-percent">0%</strong>
+              <span>작성률</span>
+            </div>
+          </div>
+          <div class="progress-copy">
+            <span>진행 상황</span>
+            <strong><b id="answered-count">0</b> / 34 답안</strong>
+            <small><b id="graded-count">0</b>개 채점 완료</small>
+          </div>
+        </section>
+
+        <div class="sidebar-section">
+          <p class="sidebar-label">보기</p>
+          <div class="view-filters" id="view-filters">
+            <button class="view-filter active" data-status="all" type="button">
+              <span>전체 문제</span><b id="filter-all-count">34</b>
+            </button>
+            <button class="view-filter" data-status="unanswered" type="button">
+              <span>미작성</span><b id="filter-unanswered-count">34</b>
+            </button>
+            <button class="view-filter" data-status="graded" type="button">
+              <span>채점 완료</span><b id="filter-graded-count">0</b>
+            </button>
+          </div>
+        </div>
+
+        <div class="sidebar-section lecture-section">
+          <p class="sidebar-label">강의 범위</p>
+          <nav class="lecture-nav" id="lecture-nav"></nav>
+        </div>
+
+        <div class="sidebar-note">
+          <span class="note-index">NOTE / 01</span>
+          <p>답안은 이 브라우저에 자동 저장됩니다. 새로고침해도 이어서 풀 수 있어요.</p>
+        </div>
+      </aside>
+
+      <main class="main">
+        <section class="hero">
+          <div class="hero-eyebrow">
+            <span>SPRING FINAL</span>
+            <i></i>
+            <span>34 PROBLEMS</span>
+          </div>
+          <h1>시스템을<br /><em>끝까지</em> 이해하기.</h1>
+          <p>
+            Lecture 01부터 17까지, 설명할 수 있을 때까지 풀어보세요.
+            Claude Sonnet 4.6이 표현의 차이까지 읽고 답안을 채점합니다.
+          </p>
+          <div class="hero-stats">
+            <div>
+              <span>범위</span>
+              <strong>17</strong>
+              <small>Lectures</small>
+            </div>
+            <div>
+              <span>문제</span>
+              <strong>34</strong>
+              <small>Problems</small>
+            </div>
+            <div>
+              <span>정답</span>
+              <strong id="correct-count">0</strong>
+              <small>Correct</small>
+            </div>
+          </div>
+        </section>
+
+        <section class="question-toolbar">
+          <div>
+            <span class="toolbar-kicker">QUESTION SET</span>
+            <h2 id="current-view-title">전체 문제</h2>
+          </div>
+          <label class="search-box">
+            <span>⌕</span>
+            <input id="search-input" type="search" placeholder="문제 검색" />
+          </label>
+        </section>
+
+        <div class="question-list" id="question-list">
+          <div class="loading-state">
+            <div class="loader"></div>
+            <p>문제집을 펼치는 중...</p>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <div class="toast" id="toast" role="status"></div>
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>

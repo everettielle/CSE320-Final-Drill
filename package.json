@@ -1,0 +1,24 @@
+{
+  "name": "cse320-exam",
+  "version": "1.0.0",
+  "description": "Interactive CSE320 final practice exam with Claude grading",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node --watch server.js",
+    "start": "node server.js",
+    "test": "node --test"
+  },
+  "keywords": [
+    "cse320",
+    "anthropic",
+    "practice-exam"
+  ],
+  "author": "",
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "marked": "^18.0.5"
+  }
+}
