@@ -5,6 +5,8 @@
 > 문제 형식은 실제 중간고사(Midterm 1·2)의 출제 방식(용어 매칭 / 코드 빈칸 채우기 / 추적·분석 / 계산)을 따랐습니다.
 >
 > **사용법:** 먼저 문제만 풀고, 맨 뒤의 **Answer Key**에서 답과 해설을 확인하세요.
+>
+> **시험 조건 반영:** 계산기와 치트시트 없이 풀 수 있도록 구성했습니다. 정확한 함수명·레지스터·매크로 식을 묻는 암기형 문제에는 선택지를 제공하며, 계산은 작은 2의 거듭제곱과 간단한 사칙연산 범위로 제한합니다.
 
 ---
 
@@ -26,6 +28,7 @@ Choose your answers from: **API, ABI, ISA, POSIX**
 ### P1.2 [5 × 2pt] Compilation Pipeline
 
 The compilation of `hello.c` passes through four tools. Fill in the tool name and the resulting file for each stage, and the gcc flag.
+Choose from: **cpp, cc1, as, ld, `-S`**
 
 ```
 hello.c --[ 1)______ ]--> hello.i --[ 2)______ ]--> hello.s --[ 3)______ ]--> hello.o --[ 4)______ ]--> hello
@@ -43,7 +46,7 @@ hello.c --[ 1)______ ]--> hello.i --[ 2)______ ]--> hello.s --[ 3)______ ]--> he
 
 ### P2.1 [6 × 2pt] Values in C
 
-In C, every literal is a number. State the value (or what it represents) for each expression.
+In C, every literal is a number. State the value (or what it represents) for each expression. Assume ASCII, where `'a'` is 97.
 
 1. `'a'` → ____________
 2. `20L` → ____________
@@ -52,24 +55,26 @@ In C, every literal is a number. State the value (or what it represents) for eac
 5. `main` (used as an expression) → ____________
 6. Given `int a = 0xff, b = 0x05;`, what is the decimal result of `a & b`? → ____________
 
-### P2.2 [5 × 2pt] Flags and Masks
+### P2.2 [6 × 2pt] Reading Flags and Masks
 
-A 32-bit `unsigned int` packs several fields. The top bit (bit 31) is **gender**. Implement the two macros below using shift and bitwise operators.
+An 8-bit value stores **gender in bit 7** and **department in bits 2–0**.
 
-```c
-#define MALE    (0)
-#define FEMALE  (1)
+Use these provided facts:
 
-// pack: OR the gender bit into bit 31 of data
-#define SET_GENDER(data, gender)   1)________________________
+- `0xA5` = `1010 0101₂`
+- gender mask `0x80` = `1000 0000₂`
+- department mask `0x07` = `0000 0111₂`
+- For signed two's-complement integers, `~x = -(x + 1)`.
 
-// extract: bit 31, masked to 1 bit
-#define GET_GENDER(data)           2)________________________
-```
+For expression questions, choose from:
+**`(data >> 7) & 1`**, **`data & 0x07`**, **`data | 0x80`**
 
-3. Department occupies **3 bits starting at bit 26**. Write `GET_DEPT(data)`: → ____________
-4. After `a = SET_GENDER(0, FEMALE);`, what is the hexadecimal value of `a`? → ____________
-5. What does `~5` print as a signed `int` (decimal)? → ____________
+1. What gender bit is stored in `0xA5`? → ____________
+2. Department bits in `0xA5` and their decimal value: → ____________
+3. Which expression extracts the gender bit? → ____________
+4. Which expression extracts the department field? → ____________
+5. Starting with `data = 0x05`, which expression sets the gender bit, and what hexadecimal value results? → ____________
+6. Using the provided identity, what is `~5` as a signed decimal integer? → ____________
 
 ---
 
@@ -77,7 +82,7 @@ A 32-bit `unsigned int` packs several fields. The top bit (bit 31) is **gender**
 
 ### P3.1 [6 × 2pt] sizeof and Pointer vs Array
 
-Assume a 64-bit Linux machine. Give the value of each `sizeof` expression.
+Assume a 64-bit Linux machine where `char=1`, `short=2`, `int=4`, and `long`/pointers are 8 bytes. Give the value of each `sizeof` expression.
 
 ```c
 char  c;  short s;  int i;  long l;
@@ -95,6 +100,7 @@ char *str   = "hello world";
 
 Match each variable to the section it is allocated in.
 Choose from: **.data, .bss, .rodata, stack, heap**
+Assume the compiler places initialized file-scope `const` objects in `.rodata`.
 
 ```c
 int g_ini = 3;           // (1)
@@ -116,6 +122,11 @@ void foo() {
 ## Lecture 04 — x86 Assembly Language
 
 ### P4.1 [6 × 2pt] Addressing, Suffixes, and Semantics (AT&T)
+
+For #5, choose from:
+**`subq $8, %rsp; movq %rax, (%rsp)`**,
+**`movq (%rsp), %rax; addq $8, %rsp`**,
+**`subq $4, %rsp; movl %eax, (%rsp)`**
 
 1. In AT&T syntax `op src, dst`, what does `movl $1, %eax` do? → ____________
 2. For `movl -5(%rbp, %rsi, 4), %eax`, write the **effective address** formula being loaded from: → ____________
@@ -151,7 +162,7 @@ sum:
 2. Which stack slot holds the accumulator `s`? → ____________
 3. Line C (`addl %eax, -8(%rbp)`) corresponds to which C statement? → ____________
 4. Lines E + `jle` correspond to which part of the C `for` loop? → ____________
-5. `jle .L10` jumps when which flag condition holds (in terms of SF, OF, ZF)? → ____________
+5. `jle .L10` jumps when which condition holds? Choose from **`SF != OF or ZF == 1`**, **`SF == OF and ZF == 0`**, **`ZF == 0`**. → ____________
 6. Why does the comparison use `$9` instead of `$10`? → ____________
 
 ---
@@ -159,6 +170,9 @@ sum:
 ## Lecture 05 — Function Call & Runtime Environment
 
 ### P5.1 [6 × 2pt] Calling Convention
+
+For register-name blanks, choose from: **`%rdi, %rsi, %rdx, %rcx, %r8, %r9, %rax, %rbp, %rsp`**
+For #6, choose from: **`movq %rbp, %rsp; popq %rbp`**, **`popq %rsp; movq %rsp, %rbp`**
 
 1. List the first **6 integer-argument registers** in order (the GCC x86-64 convention): → ____________
 2. Where is the **7th and later** argument passed? → ____________
@@ -184,6 +198,7 @@ Mark each task as performed by the **CALLER** or the **CALLEE**.
 ### P6.1 [6 × 2pt] 2D Matrix Allocation and Free
 
 Fill in the blanks to allocate and deallocate a 10 × 10 `float` matrix.
+For 1–4, choose from: **`malloc(10 * sizeof(float*))`**, **`malloc(10 * sizeof(float))`**, **`free(mat[i])`**, **`free(mat)`**
 
 ```c
 #include <stdlib.h>
@@ -216,6 +231,8 @@ typedef struct Person {
 } Person;
 ```
 
+For 1–3, choose or adapt from: **`&(((st*)0)->m)`, `offsetof(st, m)`, `containerof(pos, struct Person, list)`**
+
 1. Complete `offsetof`: `#define offsetof(st, m)  ((size_t) 1)____________ )` → ____________
 2. Complete `containerof`: `#define containerof(ptr, st, m) ((st*)(((char*)(ptr)) - 2)____________ ))` → ____________
 3. Given a `struct List *pos`, write the expression that recovers the enclosing `Person*`: → ____________
@@ -230,31 +247,39 @@ Mark each as a **bug** (B) or **OK** (O):
 
 ## Lecture 07 — Dynamic Memory Allocation II (Allocator Internals)
 
-### P7.1 [7 × 2pt] Allocator Macros
-
-Complete the standard implicit-free-list macros (`WSIZE = 4`, `DSIZE = 8`). `bp` always points to the **payload**.
+### P7.1 [6 × 2pt] Reading Allocator Metadata
 
 ```c
-#define PACK(size, alloc)   1)________________________   // combine size + alloc bit
+#define WSIZE 4
+#define DSIZE 8
+#define PACK(size, alloc)   ((size) | (alloc))
 #define GET(p)              (*(unsigned int *)(p))
-#define GET_SIZE(p)         2)________________________   // mask off low 3 bits
-#define GET_ALLOC(p)        3)________________________   // low 1 bit
-#define HDRP(bp)            4)________________________   // header address from bp
+#define GET_SIZE(p)         (GET(p) & ~0x7)
+#define GET_ALLOC(p)        (GET(p) & 0x1)
+#define HDRP(bp)            ((char*)(bp) - WSIZE)
 #define FTRP(bp)            ((char*)(bp) + GET_SIZE(HDRP(bp)) - DSIZE)
-#define NEXT_BLKP(bp)       5)________________________   // next block's payload
-#define PREV_BLKP(bp)       6)________________________   // previous block's payload
+#define NEXT_BLKP(bp)       ((char*)(bp) + GET_SIZE(HDRP(bp)))
 ```
 
-7. Why is the **footer (boundary tag)** needed in addition to the header? → ____________
+Assume a block's header contains `PACK(32, 1)` and its payload pointer `bp` has address 100.
+
+1. What hexadecimal value does `PACK(32, 1)` produce? → ____________
+2. What does `GET_SIZE(HDRP(bp))` return? → ____________
+3. What does `GET_ALLOC(HDRP(bp))` return? → ____________
+4. What address does `HDRP(bp)` compute? → ____________
+5. What address does `NEXT_BLKP(bp)` compute? → ____________
+6. Why is the **footer (boundary tag)** useful in addition to the header? → ____________
 
 ### P7.2 [6 × 2pt] Fragmentation, Placement, Coalescing, GC
+
+For #3, choose from: **First fit, Next fit, Best fit, Random fit**
 
 1. Internal fragmentation is caused mainly by two things — name them: → ____________
 2. **External** fragmentation is: → ____________
 3. Name the three classic placement policies: → ____________
 4. In the 4 coalescing cases, which case requires merging the **previous + current + next** blocks? → ____________
 5. In Mark & Sweep GC, what happens in the **Sweep** phase? → ____________
-6. A pointer is "garbage" when: → ____________
+6. An allocated block is "garbage" when: → ____________
 
 ---
 
@@ -275,6 +300,8 @@ Choose from: **open, close, read, write, dup2, pipe, stat, lseek**
 ### P8.2 [6 × 2pt] pipe + dup2 (`ls | wc`) & File Sharing
 
 Fill in the blanks so the child runs `ls` and the parent runs `wc`, connected by a pipe (STDIN=0, STDOUT=1).
+For 1–3, use: **`pipe(fd)`, `dup2(fd[1], 1)`, `dup2(fd[0], 0)`**
+For #4, choose from: **descriptor table, open file table, v-node table, page table**
 
 ```c
 void test_pipe() {
@@ -305,6 +332,7 @@ void test_pipe() {
 ### P9.1 [4 × 2pt + 1] Exception Types & Process Context
 
 Match each description (Interrupt / Trap / Fault / Abort):
+For #5, choose from: **`%rax, %rdi, %rbp, %rsp`**
 
 1. Caused by an I/O device signal; **asynchronous**; always returns to the next instruction: → ____________
 2. Intentional exception caused by a `syscall` instruction; returns to the next instruction: → ____________
@@ -332,6 +360,8 @@ int main() {
 }
 ```
 
+For #5–6, choose from: **zombie, orphan, `wait`/`waitpid`, `execve`**
+
 1. What does the **child** print for `child x`? → ____________
 2. What does the **parent** print for `parent x`? → ____________
 3. After `fork()`, are the two `x` variables the **same memory** or **separate copies**? → ____________
@@ -355,7 +385,12 @@ Choose from: **signal, kill, alarm, sigprocmask, sigsuspend, pause**
 
 ### P10.2 [6 × 2pt] SIGINT Handler & "Signals Are Not Queued"
 
-Fill in the blanks (functions shown: `sigfillset`, `sigprocmask`, `signal`, `sigsuspend`).
+For 1–4, choose from:
+**`sigfillset(&mask)`**, **`sigprocmask(SIG_BLOCK, &mask, &prev)`**,
+**`signal(SIGINT, handler)`**, **`sigsuspend(&prev)`**
+For #5, choose from:
+**`while (waitpid(-1, NULL, 0) > 0) ;`**,
+**`waitpid(-1, NULL, 0);`**
 
 ```c
 void handler(int sig) { /* ... */ }
@@ -371,7 +406,7 @@ void test_signal() {
 }
 ```
 
-5. Because signals are **not queued**, a single `SIGCHLD` handler invocation may reap only one child even if many died. What loop fixes this inside the handler? → ____________
+5. Following the lecture's handler pattern, because signals are **not queued**, a single `SIGCHLD` handler invocation may reap only one child even if many died. What loop reaps all children? → ____________
 6. Why must a handler save and restore `errno`? → ____________
 
 ---
@@ -393,6 +428,10 @@ Choose from: **adapter, hub, bridge, router, MAC, frame, packet, IP address, por
 ### P11.2 [7 × 2pt] Socket Server/Client Skeleton
 
 Fill in the correct calls.
+For 1–4, choose from:
+**`socket(AF_INET, SOCK_STREAM, 0)`**, **`listen(sfd, 1024)`**,
+**`accept(sfd, (struct sockaddr*)&caddr, &clen)`**,
+**`connect(sfd, (struct sockaddr*)&saddr, sizeof(saddr))`**
 
 ```c
 // SERVER
@@ -417,16 +456,19 @@ sfd = socket(AF_INET, SOCK_STREAM, 0);
 
 ### P12.1 [6 × 2pt] Pthreads & Thread Memory Model
 
+For exact API/term blanks, choose from: **`pthread_create`, `pthread_join`, P, V, mutex**
+
 1. Function that creates a new thread: → ____________
 2. Function that blocks until a specific thread terminates and reaps it: → ____________
-3. List the items that belong to each thread's **private context**: → ____________
-4. Of {registers, stack, heap, global variables, code}, which are **shared** across threads? → ____________
+3. List the items that belong to each thread's **private execution context**: → ____________
+4. Of {registers, stack region, heap, global variables, code}, which belong to the process's **shared virtual address space**? Note that each thread normally uses its own stack region, but other threads can address it. → ____________
 5. `sem_wait(&s)` implements which semaphore operation, P or V? → ____________
 6. A binary semaphore used for mutual exclusion is called a: → ____________
 
 ### P12.2 [6 × 2pt] Producer–Consumer Bounded Buffer
 
 The bounded buffer uses three semaphores: `mutex` (init 1), `slots` (init n), `items` (init 0). Fill in the `sbuf_insert` / `sbuf_remove` order.
+For 1–4, choose from: **`sem_wait(&sp->slots)`**, **`sem_post(&sp->items)`**, **`sem_wait(&sp->items)`**, **`sem_post(&sp->slots)`**
 
 ```c
 void sbuf_insert(sbuf_t *sp, int item) {
@@ -455,18 +497,22 @@ int sbuf_remove(sbuf_t *sp) {
 
 ### P13.1 [6 × 2pt] Thread-Unsafe Classes & Deadlock Conditions
 
+For classification terms, choose from: **Class 2, Class 3, reentrant, thread-safe**
+For #1, choose four from: **Mutual exclusion, Hold and wait, No preemption, Circular wait, Starvation**
+
 1. List the **four necessary conditions** for deadlock: → ____________
 2. A function that returns a pointer to a `static` local buffer (e.g., `ftos`) is which thread-unsafe class? → ____________
 3. `rand()` keeps state in `next_seed` across calls — which thread-unsafe class? → ____________
 4. A function that references **no shared data** (all args by value, all data local) is called: → ____________
 5. Is every reentrant function thread-safe? Is every thread-safe function reentrant? → ____________
-6. Why can't a Class-2 (state-across-calls) function be fixed merely by adding a mutex? → ____________
+6. Why does the lecture classify a Class-2 function as thread-unsafe even when a mutex protects each call? What kind of rewrite fixes it? → ____________
 
 ### P13.2 [6 × 2pt] Dining Philosophers & Lock Ordering
 
-1. In Dining Philosophers, what bad outcome occurs if **every** philosopher grabs the **right** chopstick first? → ____________
+1. What bad outcome occurs if **every** philosopher simultaneously grabs and holds the **right** chopstick first? → ____________
 2. Which of the four deadlock conditions does **ordered locking** (smallest-id first) break? → ____________
 3. Fill in the fix — each philosopher acquires the chopstick with the **smaller id** first:
+Choose from: **`sem_wait(&p->right->lock)`**, **`sem_wait(&p->left->lock)`**
 
 ```c
 if (p->left->id < p->right->id) {
@@ -495,12 +541,13 @@ if (p->left->id < p->right->id) {
 
 ### P14.2 [6 × 2pt] Disk Capacity & Access Time
 
-A disk has: 5 platters, 512 bytes/sector, average 300 sectors/track, 20,000 tracks/surface, 2 surfaces/platter. Rotational rate 7200 RPM, average seek time 9 ms, average 400 sectors/track (for the timing part).
+A disk has: 2 platters, 512 bytes/sector, 128 sectors/track, 1,024 tracks/surface, 2 surfaces/platter. Rotational rate is 6,000 RPM, average seek time is 5 ms, and there are 100 sectors/track for the timing part. Assume a DRAM access takes 100 ns.
+Useful facts: `512=2^9`, `128=2^7`, `1,024=2^10`, `1 MiB=2^20 bytes`, `1 minute=60,000 ms`, and `1 ms=10^6 ns`.
 
 1. Write the **disk capacity formula** (the five factors): → ____________
-2. Compute the capacity (GB): → ____________
+2. Compute the capacity (MiB): → ____________
 3. Compute the **average rotational latency** (ms): → ____________
-4. Compute the **average transfer time** for one sector (ms), using 400 sectors/track: → ____________
+4. Compute the **average transfer time** for one sector (ms), using 100 sectors/track: → ____________
 5. Compute total **average access time** (ms): → ____________
 6. Roughly how many times slower is a disk access than a DRAM access (order of magnitude)? → ____________
 
@@ -510,23 +557,25 @@ A disk has: 5 platters, 512 bytes/sector, average 300 sectors/track, 20,000 trac
 
 ### P15.1 [6 × 2pt] Cache Organization & Address Breakdown
 
-For a cache: **m = 16** address bits, **S = 64 sets**, **B = 64 bytes/block**, **E = 8 lines/set**.
+For a cache: **m = 12** address bits, **S = 8 sets**, **B = 16 bytes/block**, **E = 2 lines/set**.
+For #5–6, choose from:
+**direct-mapped, fully associative, set selection, line matching, word extraction, write-back**
 
 1. How many **block-offset (b)** bits? → ____________
 2. How many **set-index (s)** bits? → ____________
 3. How many **tag (t)** bits? → ____________
-4. What is the cache data size **C = B × E × S** (in KB)? → ____________
+4. What is the cache data size **C = B × E × S** (in bytes)? → ____________
 5. When `E = 1`, the cache is called ____________; when there is only one set (`E = C/B`), it is ____________.
 6. Name the three steps to access a word from the cache: → ____________
 
 ### P15.2 [6 × 2pt] Direct-Mapped Trace & Stride
 
-A tiny direct-mapped cache has `(S, E, B, m) = (4, 1, 2, 4)` (so b=1, s=2, t=1). Addresses are read in order: **0, 1, 13, 8, 0**.
+A tiny direct-mapped cache has `(S, E, B, m) = (4, 1, 2, 4)` (so b=1, s=2, t=1). Decimal addresses are read in order: **0, 1, 13, 8, 0**.
 
 1. For each access mark hit (h) or miss (m): 0→__, 1→__, 13→__, 8→__, 0→__
 2. Why is the second read of address 0 a **miss**? (name the miss type) → ____________
-3. For `sumvec` (stride-1, 4-byte words, 16-byte blocks), what is the miss rate? → ____________
-4. For column-major access of a 2D `int` array (`sumarraycols`), what is the miss rate, and why? → ____________
+3. For a long stride-1 `sumvec` starting with an empty cache (4-byte words, 16-byte blocks, no conflict misses), what is the miss rate? → ____________
+4. In the lecture's shown column-major example, every access is a miss. What is its miss rate, and which kind of locality is lost? → ____________
 5. **Write-through** vs **write-back** — which defers the write to the lower level until eviction? → ____________
 6. Why are the **middle** address bits (not the high bits) used as the set index? → ____________
 
@@ -535,6 +584,9 @@ A tiny direct-mapped cache has `(S, E, B, m) = (4, 1, 2, 4)` (so b=1, s=2, t=1).
 ## Lecture 16 — Virtual Memory
 
 ### P16.1 [6 × 2pt] VM Concepts & Page Table Entries
+
+For exact terms, choose from:
+**MMU, VPN, VPO, PPN, page fault, physical page address, disk location, not allocated**
 
 1. Name the three main benefits of virtual memory: → ____________
 2. The hardware unit that translates a virtual address to a physical address is the ____________.
@@ -545,7 +597,8 @@ A tiny direct-mapped cache has `(S, E, B, m) = (4, 1, 2, 4)` (so b=1, s=2, t=1).
 
 ### P16.2 [6 × 2pt] Address Translation Calculation
 
-A 32-bit virtual address space, **4 KB pages**, **4-byte PTEs**, single-level page table.
+A 16-bit virtual address space, **256-byte pages**, **2-byte PTEs**, single-level page table.
+For #6, choose from: **PTBR, MMU, TLB**
 
 1. How many bits are in the **VPO**? → ____________
 2. How many bits are in the **VPN**? → ____________
@@ -560,6 +613,10 @@ A 32-bit virtual address space, **4 KB pages**, **4-byte PTEs**, single-level pa
 
 ### P17.1 [6 × 2pt] TLB & Multi-Level Page Tables
 
+For exact terms, choose from:
+**PTEs, virtual, physical, least-significant, higher, level-1 (top-level)**
+For #6, choose from: **4 levels + CR3**, **2 levels + MMU**, **8 levels + TLB**
+
 1. The TLB is a small cache of ____________, indexed by the (virtual / physical?) address.
 2. With **T = 2^t** TLB sets, the **TLBI** is the ____________ bits of the VPN and the **TLBT** is the ____________ bits.
 3. What problem do **multi-level page tables** solve compared to a single flat page table? → ____________
@@ -568,6 +625,9 @@ A 32-bit virtual address space, **4 KB pages**, **4-byte PTEs**, single-level pa
 6. In the Intel i7 (48-bit VA), how many levels of page table are used, and which register is the PTBR? → ____________
 
 ### P17.2 [6 × 2pt] Linux VM Areas, mmap, Copy-on-Write
+
+For exact terms, choose from:
+**area, `vm_area_struct`, MAP_SHARED, MAP_PRIVATE, read-only, private COW, anonymous file**
 
 1. A contiguous chunk of allocated virtual memory with related pages is a Linux ____________; it is described by a ____________ struct.
 2. On a page fault, the handler asks two questions before swapping. What are the two illegal outcomes? → ____________
@@ -604,11 +664,12 @@ A 32-bit virtual address space, **4 KB pages**, **4-byte PTEs**, single-level pa
 6) `0xff & 0x05` = `0x05` = **5**
 
 **P2.2**
-1) `((data) | (gender) << 31)`
-2) `((data) >> 31 & 1)`
-3) `((data) >> 26 & 7)` (3-bit field → mask `7`)
-4) `FEMALE(=1) << 31` = `0x80000000`
-5) `~5` = **-6** (one's complement; bit pattern `0xfffffffa`)
+1) **1** (the leftmost bit of `1010 0101₂`).
+2) Department bits are **`101₂`**, which is decimal **5**.
+3) **`(data >> 7) & 1`**.
+4) **`data & 0x07`**.
+5) Use **`data | 0x80`**; `0x05 | 0x80 = 0x85`.
+6) `~5 = -(5 + 1) =` **-6**.
 
 ---
 
@@ -637,7 +698,7 @@ A 32-bit virtual address space, **4 KB pages**, **4-byte PTEs**, single-level pa
 2) `-8(%rbp)` holds `s`.
 3) `s = s + i;`
 4) The loop **condition test** `i < 10` (continue looping while `i <= 9`).
-5) `jle` jumps when `(SF == OF) and ZF == 1` is allowed too — i.e. "less than or equal": taken when `SF != OF` **or** `ZF == 1`. (Equivalently: signed `≤`.)
+5) `jle` is taken when `SF != OF` **or** `ZF == 1` (signed less-than-or-equal).
 6) Because the C condition `i < 10` is implemented as "loop again while `i <= 9`," so it compares against 9 with `jle`.
 
 ---
@@ -649,7 +710,7 @@ A 32-bit virtual address space, **4 KB pages**, **4-byte PTEs**, single-level pa
 2) On the **stack** (pushed by the caller).
 3) `%rax`.
 4) `%rbp` = stack frame pointer; `%rsp` = stack top pointer.
-5) Pushes `%rip` (return address) onto the stack **and** jumps to the function label.
+5) Pushes the **address of the next instruction** (the return address) onto the stack and jumps to the function label.
 6) `movq %rbp, %rsp` then `popq %rbp`.
 
 **P5.2** 1) **CALLER** 2) **CALLEE** 3) **CALLEE** 4) **CALLEE** 5) **CALLER**
@@ -660,11 +721,11 @@ A 32-bit virtual address space, **4 KB pages**, **4-byte PTEs**, single-level pa
 ## Lecture 06
 
 **P6.1**
-1) `(float**)malloc(10 * sizeof(float*))`
-2) `(float*)malloc(10 * sizeof(float))`
+1) `malloc(10 * sizeof(float*))`
+2) `malloc(10 * sizeof(float))`
 3) `free(mat[i])`
 4) `free(mat)`
-5) If you `free(words)` first, you lose the addresses of all `words[i]` → memory leak / dangling pointers. Always free **inner → outer**.
+5) After `free(words)`, reading `words[i]` is a use-after-free, so the inner allocations can no longer be safely reached through that array. Always free **inner → outer**.
 6) `strdup(s)` = `malloc(strlen(s)+1)` then `strcpy(copy, s)` — allocates a heap copy of the string.
 
 **P6.2**
@@ -680,13 +741,12 @@ A 32-bit virtual address space, **4 KB pages**, **4-byte PTEs**, single-level pa
 ## Lecture 07
 
 **P7.1**
-1) `((size) | (alloc))`
-2) `(GET(p) & ~0x7)`
-3) `(GET(p) & 0x1)`
-4) `((char*)(bp) - WSIZE)`
-5) `((char*)(bp) + GET_SIZE((char*)(bp) - WSIZE))`
-6) `((char*)(bp) - GET_SIZE((char*)(bp) - DSIZE))`
-7) The footer (boundary tag, a copy of the header) lets you find the **previous** block's size in O(1), enabling backward coalescing without scanning the whole list.
+1) `PACK(32, 1) = 32 | 1 =` **`0x21`**.
+2) **32** (the low three metadata bits are masked off).
+3) **1** (the block is allocated).
+4) **96** (`100 - WSIZE`).
+5) **132** (`100 + 32`).
+6) The footer stores the block size at the end of a block, so the allocator can find the **previous** block and coalesce backward in O(1).
 
 **P7.2**
 1) Minimum block size constraint + padding for **alignment**.
@@ -736,7 +796,7 @@ A 32-bit virtual address space, **4 KB pages**, **4-byte PTEs**, single-level pa
 2) `sigprocmask(SIG_BLOCK, &mask, &prev)`
 3) `signal(SIGINT, handler)`
 4) `sigsuspend(&prev)`
-5) `while (waitpid(-1, NULL, 0) > 0) ;` — reap **all** ready children in one handler call.
+5) `while (waitpid(-1, NULL, 0) > 0) ;` — following the lecture pattern, repeat `waitpid` so one handler invocation reaps **all** children rather than only one.
 6) Library functions in the main flow may have set `errno`; a handler that calls `errno`-setting functions could clobber it. Save on entry, restore before return so the interrupted code sees a consistent `errno`.
 
 ---
@@ -761,8 +821,8 @@ A 32-bit virtual address space, **4 KB pages**, **4-byte PTEs**, single-level pa
 **P12.1**
 1) `pthread_create`
 2) `pthread_join`
-3) TID, **stack + stack pointer**, **program counter**, general-purpose **registers** + condition codes (flags).
-4) **stack (technically per-thread but not protected), heap, global variables, code** are shared (virtual memory is shared); only **registers** are truly private. (Each thread has its own stack, but other threads can still reach it.)
+3) TID, **stack**, **stack pointer**, **program counter**, general-purpose **registers**, and condition codes (flags).
+4) **Stack regions, heap, global variables, and code** are all in the process's shared virtual address space. Each thread normally uses its own stack region, but it is not protected from other threads.
 5) **P** (probe / lock).
 6) **mutex** (binary semaphore).
 
@@ -772,7 +832,7 @@ A 32-bit virtual address space, **4 KB pages**, **4-byte PTEs**, single-level pa
 3) `sem_wait(&sp->items)`
 4) `sem_post(&sp->slots)`
 5) All threads dereference the same `&i`; by the time a thread reads it, `main` may have incremented `i` → wrong/duplicate ids. Fix: give each thread its **own** `id[i]` element to point at.
-6) The local-accumulation version touches the shared variable only **once** at the end, avoiding a system-call-heavy `sem_wait/sem_post` on **every** iteration (semaphores are expensive).
+6) The local-accumulation version touches the shared variable only **once** at the end, avoiding synchronization, contention, and possible blocking on **every** iteration.
 
 ---
 
@@ -784,14 +844,14 @@ A 32-bit virtual address space, **4 KB pages**, **4-byte PTEs**, single-level pa
 3) **Class 2** (keeps state across invocations).
 4) **Reentrant** function.
 5) Every reentrant function **is** thread-safe; but not every thread-safe function is reentrant (reentrant ⊂ thread-safe).
-6) Because the shared state persists *across* calls; a mutex only serializes access — it doesn't remove the dependency on shared state. You must **rewrite** it (e.g., pass state explicitly / make it reentrant).
+6) A mutex prevents simultaneous updates, but every thread still interleaves operations on one state kept across calls, so each thread's results depend on the schedule. Under the lecture's classification it remains thread-unsafe; fix it by rewriting it as a **reentrant** function that receives explicit per-thread state.
 
 **P13.2**
-1) **Deadlock** — every philosopher holds one chopstick and waits forever for the other (circular wait) → starvation.
+1) **Starvation caused by deadlock** — if they all acquire and hold the right chopstick together, each waits forever for the left one.
 2) **Circular wait.**
 3) 1) `sem_wait(&p->right->lock)`  2) `sem_wait(&p->left->lock)` (acquire smaller-id first in both branches).
 4) The handler runs to completion before the main flow resumes, but the main flow holds the lock and can't release it until it resumes → both stuck (deadlock).
-5) **Disable the signal/interrupt** while the main flow holds the shared resource (or don't take locks in handlers).
+5) **Block/disable the relevant signal** while the normal flow accesses the shared resource, so the handler cannot interrupt while the lock is held. The handler itself should avoid locks and other non-async-signal-safe operations.
 6) The region of the progress graph where **both** threads would be inside the same critical section simultaneously — trajectories must not enter it (the semaphore prevents this).
 
 ---
@@ -800,7 +860,7 @@ A 32-bit virtual address space, **4 KB pages**, **4-byte PTEs**, single-level pa
 
 **P14.1**
 1) a **capacitor**.
-2) SRAM is **faster** (and persistent while powered, ~6 transistors/bit); DRAM is **denser/cheaper** (1 transistor/bit).
+2) SRAM is **faster** (and persistent while powered, ~6 transistors/bit); DRAM is **denser/cheaper** (typically one transistor plus one capacitor per bit).
 3) Capacitor charge **leaks** (within 10–100 ms); each bit must be read and rewritten to retain its value.
 4) **registers → cache (SRAM) → main memory (DRAM) → disk** (fastest to slowest).
 5) `s` (the sum) has **temporal** locality; `items[i]` has **spatial** locality.
@@ -808,21 +868,21 @@ A 32-bit virtual address space, **4 KB pages**, **4-byte PTEs**, single-level pa
 
 **P14.2**
 1) `(bytes/sector) × (sectors/track) × (tracks/surface) × (surfaces/platter) × (platters/disk)`.
-2) `512 × 300 × 20000 × 2 × 5 = 30,720,000,000 bytes ≈ 30.72 GB`.
-3) `T_avg rotation = ½ × (60 / 7200) s = ½ × 8.33 ms ≈ 4 ms`.
-4) `T_avg transfer = (60/7200) × (1/400) s ≈ 0.02 ms`.
-5) `T_access = 9 + 4 + 0.02 ≈ 13.02 ms`.
-6) Roughly **~2,500×** slower than DRAM (disk ≈ 10 ms vs DRAM ≈ 4,000 ns); order of magnitude ~10³–10⁴.
+2) `512 × 128 × 1024 × 2 × 2 = 268,435,456 bytes = 256 MiB`.
+3) One rotation at 6,000 RPM takes `10 ms`, so average rotational latency is **5 ms**.
+4) One sector takes `10 ms / 100 = 0.1 ms`.
+5) `T_access = 5 + 5 + 0.1 = 10.1 ms`.
+6) `10 ms / 100 ns = 100,000`, so disk access is roughly **10⁵ times** slower.
 
 ---
 
 ## Lecture 15
 
 **P15.1**
-1) `b = log2(64) = 6` bits.
-2) `s = log2(64) = 6` bits.
-3) `t = m − (s + b) = 16 − (6 + 6) = 4` bits.
-4) `C = B × E × S = 64 × 8 × 64 = 32,768 bytes = 32 KB`.
+1) `b = log2(16) = 4` bits.
+2) `s = log2(8) = 3` bits.
+3) `t = m − (s + b) = 12 − (3 + 4) = 5` bits.
+4) `C = B × E × S = 16 × 2 × 8 = 256 bytes`.
 5) `E = 1` → **direct-mapped**; one set → **fully associative**.
 6) **Set selection, line matching, word extraction.**
 
@@ -830,7 +890,7 @@ A 32-bit virtual address space, **4 KB pages**, **4-byte PTEs**, single-level pa
 1) 0→**m**, 1→**h**, 13→**m**, 8→**m**, 0→**m**.
 2) **Conflict miss** — address 8 (tag 1) evicted set 0; reading 0 again (tag 0) maps to the same set 0 and misses.
 3) **25%** (1 miss per 4-word block).
-4) **100%** — stride-N (column) access jumps a full row each step, so every access lands in a new block → no spatial locality reuse.
+4) **100% miss rate**; stride-N column-major traversal loses **spatial locality** in the lecture's example.
 5) **Write-back** defers the write until eviction (needs a dirty bit); write-through writes immediately.
 6) Middle bits spread **contiguous** memory blocks across **different** sets, improving utilization; high-order indexing would map a contiguous run to the same set → conflict misses.
 
@@ -847,10 +907,10 @@ A 32-bit virtual address space, **4 KB pages**, **4-byte PTEs**, single-level pa
 6) **page fault** exception.
 
 **P16.2**
-1) VPO = `log2(4 KB) = 12` bits.
-2) VPN = `32 − 12 = 20` bits.
-3) `2^20 = 1,048,576` entries.
-4) `4 B × 2^20 = 4 MB`.
+1) VPO = `log2(256 B) = 8` bits.
+2) VPN = `16 − 8 = 8` bits.
+3) `2^8 = 256` entries.
+4) `2 B × 256 = 512 bytes`.
 5) Select a **victim page** (write it to disk if dirty, clear its valid bit), copy the requested virtual page into the physical frame, update the PTE, then **restart** the faulting instruction.
 6) **PTBR** (Page Table Base Register; CR3 on x86).
 
@@ -861,7 +921,7 @@ A 32-bit virtual address space, **4 KB pages**, **4-byte PTEs**, single-level pa
 **P17.1**
 1) **PTEs** (page table entries), indexed by the **virtual** address (VPN).
 2) TLBI = the **t least-significant** bits of the VPN; TLBT = the **remaining (higher)** bits.
-3) A single flat page table must stay fully in memory (e.g., 4 MB always resident); multi-level tables let unallocated regions skip their level-2 tables — only the level-1 table must always be resident.
+3) A large flat page table must stay fully in memory; multi-level tables let unallocated regions omit their lower-level tables, so only the top-level table must always be resident.
 4) Its corresponding **level-2 page table need not exist in memory** at all (saves space).
 5) The **level-1 (top-level)** page table.
 6) **4 levels**; the PTBR is the **CR3** register.
