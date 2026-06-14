@@ -79,7 +79,11 @@ test("keeps recall and calculation questions no-cheatsheet friendly", () => {
   const book = parseProblemBook(markdown);
   const byId = new Map(book.questions.map((question) => [question.id, question]));
 
-  assert.match(byId.get("P1.2").questionMarkdown, /Choose from: \*\*cpp, cc1, as, ld/);
+  assert.match(
+    byId.get("P1.2").questionMarkdown,
+    /Choose from: \*\*preprocessor, compiler, assembler, linker/,
+  );
+  assert.doesNotMatch(byId.get("P1.2").referenceAnswer, /\b(?:cpp|cc1|as|ld)\b/);
   assert.match(byId.get("P2.1").questionMarkdown, /Assume ASCII, where `'a'` is 97/);
   assert.match(byId.get("P2.2").questionMarkdown, /gender mask `0x80`/);
   assert.equal(byId.get("P2.2").answerFields.length, 6);

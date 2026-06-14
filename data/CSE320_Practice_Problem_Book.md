@@ -27,17 +27,17 @@ Choose your answers from: **API, ABI, ISA, POSIX**
 
 ### P1.2 [5 × 2pt] Compilation Pipeline
 
-The compilation of `hello.c` passes through four tools. Fill in the tool name and the resulting file for each stage, and the gcc flag.
-Choose from: **cpp, cc1, as, ld, `-S`**
+The compilation of `hello.c` passes through four stages. Fill in the stage name for each step and the gcc flag.
+Choose from: **preprocessor, compiler, assembler, linker, `-S`**
 
 ```
 hello.c --[ 1)______ ]--> hello.i --[ 2)______ ]--> hello.s --[ 3)______ ]--> hello.o --[ 4)______ ]--> hello
 ```
 
-1. Tool that copies `#include` contents and expands macros: → ____________
-2. Tool that converts `hello.i` to `hello.s`: → ____________
-3. Tool that converts `hello.s` to `hello.o`: → ____________
-4. Tool that resolves the symbol `printf` to its address and produces the executable: → ____________
+1. Stage that copies `#include` contents and expands macros: → ____________
+2. Stage that converts `hello.i` to `hello.s`: → ____________
+3. Stage that converts `hello.s` to `hello.o`: → ____________
+4. Stage that resolves the symbol `printf` to its address and produces the executable: → ____________
 5. Which gcc flag stops compilation after the assembly stage (generates `hello.s`)? → ____________
 
 ### P1.3 [4 × 2pt] Reference Code Fill-in — gcc Stages
@@ -895,7 +895,7 @@ if (1)________________________ == 0) {
 **P1.1** 1) **ISA** 2) **ABI** 3) **API** 4) **POSIX**
 > The system stack: Applications —(API)— Libraries —(ABI)— OS —(ISA)— Hardware. POSIX is the portability standard for library functions.
 
-**P1.2** 1) **Pre-processor (cpp)** 2) **Compiler (cc1)** 3) **Assembler (as)** 4) **Linker (ld)** 5) **`-S`**
+**P1.2** 1) **Preprocessor** 2) **Compiler** 3) **Assembler** 4) **Linker** 5) **`-S`**
 > `gcc -E` = preprocess only, `gcc -S` = compile to assembly, `gcc -c` = assemble to object, `gcc` (no flag) = link.
 
 **P1.3** 1) **`gcc -E hello.c -o hello.i`** 2) **`gcc -S hello.i`** 3) **`gcc -c hello.s`** 4) **`gcc hello.o`**
