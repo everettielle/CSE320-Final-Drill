@@ -114,9 +114,11 @@ app.post("/api/explain", async (request, response) => {
     connection: "keep-alive",
   });
   response.flushHeaders();
+  const controller = new AbortController();
+  response.on("close", () => controller.abort());
 
   try {
-    await explainWithClaudeStream(question, studentAnswer, (text) => {
+    await explainWithClaudeStream(question, studentAnswer, controller.signal, (text) => {
       writeServerEvent(response, "delta", { text });
     });
     writeServerEvent(response, "done", {
@@ -124,7 +126,7 @@ app.post("/api/explain", async (request, response) => {
       explainedAt: new Date().toISOString(),
     });
   } catch (error) {
-    console.error("Claude explanation failed:", error);
+    if (error.name !== "AbortError") console.error("Claude explanation failed:", error);
     writeServerEvent(response, "error", {
       error: error instanceof Error ? error.message : "Claude 해설 생성 중 오류가 발생했습니다.",
     });
@@ -172,10 +174,11 @@ async function gradeWithClaude(question, studentAnswer) {
   });
 }
 
-async function explainWithClaudeStream(question, studentAnswer, onDelta) {
+async function explainWithClaudeStream(question, studentAnswer, signal, onDelta) {
   return requestClaudeTextStream({
     maxTokens: 2400,
     operation: "해설 생성",
+    signal,
     onDelta,
     system: [
       "You are a patient CSE320 Systems Fundamentals II tutor.",
@@ -186,7 +189,8 @@ async function explainWithClaudeStream(question, studentAnswer, onDelta) {
       "Show relevant reasoning or small calculation steps without assuming a calculator or cheat sheet.",
       "Compare the student's answer fairly, including correct parts and misconceptions.",
       "Use exactly these four headings, each on its own line: 핵심 개념, 정답이 성립하는 이유,",
-      "내 답안과 비교, 시험에서 기억할 점. Do not use tables or merely repeat the answer key.",
+      "내 답안과 비교, 시험에서 기억할 점. Write plain text without Markdown formatting symbols.",
+      "Do not use tables or merely repeat the answer key.",
       "Keep the explanation detailed enough to teach the concept, but focused enough to review for an exam.",
     ].join(" "),
     content: [
@@ -253,9 +257,10 @@ async function requestClaudeStructured({ maxTokens, schema, operation, system, c
   return JSON.parse(text);
 }
 
-async function requestClaudeTextStream({ maxTokens, operation, system, content, onDelta }) {
+async function requestClaudeTextStream({ maxTokens, operation, system, content, signal, onDelta }) {
   const apiResponse = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
+    signal,
     headers: {
       "content-type": "application/json",
       "x-api-key": apiKey,
