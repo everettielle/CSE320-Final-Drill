@@ -1,7 +1,7 @@
 # CSE320 System Fundamentals II — Practice Problem Book
 
 > 강의 1~17을 전부 커버하는 기출 스타일 문제집입니다.
-> 각 강의당 2문제씩, 총 34문제 + 전체 정답/해설을 수록했습니다.
+> 각 강의당 3문제씩, 총 51문제 + 전체 정답/해설을 수록했습니다.
 > 문제 형식은 실제 중간고사(Midterm 1·2)의 출제 방식(용어 매칭 / 코드 빈칸 채우기 / 추적·분석 / 계산)을 따랐습니다.
 >
 > **사용법:** 먼저 문제만 풀고, 맨 뒤의 **Answer Key**에서 답과 해설을 확인하세요.
@@ -40,6 +40,18 @@ hello.c --[ 1)______ ]--> hello.i --[ 2)______ ]--> hello.s --[ 3)______ ]--> he
 4. Tool that resolves the symbol `printf` to its address and produces the executable: → ____________
 5. Which gcc flag stops compilation after the assembly stage (generates `hello.s`)? → ____________
 
+### P1.3 [4 × 2pt] Reference Code Fill-in — gcc Stages
+
+Complete the lecture's compilation commands. Choose from:
+**`gcc -E hello.c -o hello.i`**, **`gcc -S hello.i`**, **`gcc -c hello.s`**, **`gcc hello.o`**
+
+```bash
+1)________________________   # preprocess only
+2)________________________   # generate hello.s
+3)________________________   # generate hello.o
+4)________________________   # link executable
+```
+
 ---
 
 ## Lecture 02 — C Programming: Hello World (Values, Operators, Masks)
@@ -75,6 +87,22 @@ For expression questions, choose from:
 4. Which expression extracts the department field? → ____________
 5. Starting with `data = 0x05`, which expression sets the gender bit, and what hexadecimal value results? → ____________
 6. Using the provided identity, what is `~5` as a signed decimal integer? → ____________
+
+### P2.3 [4 × 2pt] Reference Code Fill-in — scanf Addresses
+
+Complete the lecture's input code. Choose from:
+**`scanf("%99s", name)`**, **`scanf("%d", &num)`**, **`printf("read %d.\n", num)`**, **`return 0`**
+
+```c
+int main() {
+    char name[100];
+    int num;
+    1)________________________;
+    2)________________________;
+    3)________________________;
+    4)________________________;
+}
+```
 
 ---
 
@@ -116,6 +144,25 @@ void foo() {
 
 1. `g_ini` → ____  2. `g_uni` → ____  3. `s_ini` → ____  4. `ec` → ____
 5. `a_uni` → ____  6. local `static int k` → ____  7. the block returned by `malloc` → ____
+
+### P3.3 [4 × 2pt] Reference Code Fill-in — Pointer Swap and Buffer
+
+Complete the pointer code from the lecture. Choose from:
+**`*a`**, **`*b`**, **`buf + next`**, **`next += n`**
+
+```c
+void swap(int *a, int *b) {
+    int t = 1)________________________;
+    *a = 2)________________________;
+    *b = t;
+}
+void getbuf(int **p, int n) {
+    static int next = 0;
+    static int buf[100];
+    *p = 3)________________________;
+    4)________________________;
+}
+```
 
 ---
 
@@ -165,6 +212,21 @@ sum:
 5. `jle .L10` jumps when which condition holds? Choose from **`SF != OF or ZF == 1`**, **`SF == OF and ZF == 0`**, **`ZF == 0`**. → ____________
 6. Why does the comparison use `$9` instead of `$10`? → ____________
 
+### P4.3 [4 × 2pt] Reference Code Fill-in — Assembly Loop
+
+Complete the central lines of the lecture's `sum` loop. Choose from:
+**`movl -4(%rbp), %eax`**, **`addl %eax, -8(%rbp)`**, **`addl $1, -4(%rbp)`**, **`jle .L10`**
+
+```asm
+.L10:
+        1)________________________
+        2)________________________
+        3)________________________
+.L9:
+        cmpl    $9, -4(%rbp)
+        4)________________________
+```
+
 ---
 
 ## Lecture 05 — Function Call & Runtime Environment
@@ -190,6 +252,20 @@ Mark each task as performed by the **CALLER** or the **CALLEE**.
 3. Set up the new stack frame pointer (`movq %rsp, %rbp`): → ____________
 4. Allocate space for local variables (`subq $N, %rsp`): → ____________
 5. Push the return address and jump to the function: → ____________
+
+### P5.3 [4 × 2pt] Reference Code Fill-in — Calling `printf`
+
+Complete the x86-64 caller code from the lecture. Choose from:
+**`movl -4(%rbp), %edx`**, **`movl %eax, %esi`**, **`leaq .LC0(%rip), %rdi`**, **`call printf@PLT`**
+
+```asm
+        movl    g(%rip), %eax
+        1)________________________
+        2)________________________
+        3)________________________
+        movl    $0, %eax
+        4)________________________
+```
 
 ---
 
@@ -243,6 +319,21 @@ Mark each as a **bug** (B) or **OK** (O):
 5. `ptr = malloc(100); ptr = malloc(200);` (then later free once) → ____________
 6. `for(i=0;i<n;i++) free(words[i]); free(words);` → ____________
 
+### P6.3 [4 × 2pt] Reference Code Fill-in — Allocate and Free Words
+
+Complete the lecture's allocation/deallocation pattern. Choose from:
+**`malloc(n * sizeof(char*))`**, **`strdup(word)`**, **`free(words[i])`**, **`free(words)`**
+
+```c
+words = 1)________________________;
+for (int i = 0; i < n; i++)
+    words[i] = 2)________________________;
+
+for (int i = 0; i < n; i++)
+    3)________________________;
+4)________________________;
+```
+
 ---
 
 ## Lecture 07 — Dynamic Memory Allocation II (Allocator Internals)
@@ -280,6 +371,18 @@ For #3, choose from: **First fit, Next fit, Best fit, Random fit**
 4. In the 4 coalescing cases, which case requires merging the **previous + current + next** blocks? → ____________
 5. In Mark & Sweep GC, what happens in the **Sweep** phase? → ____________
 6. An allocated block is "garbage" when: → ____________
+
+### P7.3 [4 × 2pt] Reference Code Fill-in — Allocator Macros
+
+Complete the allocator macros shown in the lecture. Choose from:
+**`((size) | (alloc))`**, **`(GET(p) & ~0x7)`**, **`((char *)(bp) - WSIZE)`**, **`((char *)(bp) + GET_SIZE(HDRP(bp)))`**
+
+```c
+#define PACK(size, alloc)  1)________________________
+#define GET_SIZE(p)        2)________________________
+#define HDRP(bp)           3)________________________
+#define NEXT_BLKP(bp)      4)________________________
+```
 
 ---
 
@@ -325,6 +428,21 @@ void test_pipe() {
 5. After `open()`-then-`fork()`, do parent and child **share** the file position or have **separate** positions? → ____________
 6. After `fork()`-then-`open()` (each opens the same file independently), share or separate? → ____________
 
+### P8.3 [4 × 2pt] Reference Code Fill-in — Handle Short Writes
+
+Complete the lecture's Unix I/O pattern. Choose from:
+**`read(STDIN_FILENO, buf, sizeof(buf))`**, **`open("foo.txt", O_CREAT|O_WRONLY, S_IRUSR|S_IWUSR)`**,
+**`write(fd, buf + i, n - i)`**, **`close(fd)`**
+
+```c
+char buf[100];
+int n = 1)________________________;
+int fd = 2)________________________;
+for (int i = 0; i < n; )
+    i += 3)________________________;
+4)________________________;
+```
+
 ---
 
 ## Lecture 09 — Exceptional Control Flow (ECF)
@@ -369,6 +487,20 @@ For #5–6, choose from: **zombie, orphan, `wait`/`waitpid`, `execve`**
 5. A process that has terminated but has not been reaped by its parent is called a: → ____________
 6. Which call lets the parent reap a terminated child: → ____________
 
+### P9.3 [4 × 2pt] Reference Code Fill-in — fork, exec, and reap
+
+Complete a small process-launch pattern. Choose from:
+**`fork()`**, **`pid == 0`**, **`execve(argv[0], argv, NULL)`**, **`waitpid(pid, NULL, 0)`**
+
+```c
+pid_t pid = 1)________________________;
+if (2)________________________) {
+    3)________________________;
+} else {
+    4)________________________;
+}
+```
+
 ---
 
 ## Lecture 10 — Signals
@@ -408,6 +540,20 @@ void test_signal() {
 
 5. Following the lecture's handler pattern, because signals are **not queued**, a single `SIGCHLD` handler invocation may reap only one child even if many died. What loop reaps all children? → ____________
 6. Why must a handler save and restore `errno`? → ____________
+
+### P10.3 [4 × 2pt] Reference Code Fill-in — Safe SIGCHLD Handler
+
+Complete the lecture's handler pattern. Choose from:
+**`errno`**, **`waitpid(-1, NULL, 0)`**, **`prnmsg("Reaped a child\n")`**, **`olderrno`**
+
+```c
+void handler(int sig) {
+    int olderrno = 1)________________________;
+    while (2)________________________ > 0)
+        3)________________________;
+    errno = 4)________________________;
+}
+```
 
 ---
 
@@ -450,6 +596,23 @@ sfd = socket(AF_INET, SOCK_STREAM, 0);
 6. What byte order does the network always use? → ____________
 7. What is the difference between the **listening descriptor** and the **connected descriptor**? → ____________
 
+### P11.3 [4 × 2pt] Reference Code Fill-in — Concurrent Echo Server
+
+Complete the descriptor-handling pattern from the lecture. Choose from:
+**`accept(sfd, (struct sockaddr*)&caddr, &clen)`**, **`fork() == 0`**, **`close(sfd)`**, **`close(cfd)`**
+
+```c
+cfd = 1)________________________;
+if (2)________________________) {
+    3)________________________;
+    echo(cfd);
+    close(cfd);
+    exit(0);
+} else {
+    4)________________________;
+}
+```
+
 ---
 
 ## Lecture 12 — Threads
@@ -491,6 +654,21 @@ int sbuf_remove(sbuf_t *sp) {
 5. In the buggy "Hello from thread %d" example, all threads share `&i`. What is the race, and how is it fixed? → ____________
 6. Why is accumulating into a thread-local `sum` faster than `sem_wait/post` on every `gsum += i`? → ____________
 
+### P12.3 [4 × 2pt] Reference Code Fill-in — Create and Join Threads
+
+Complete the lecture's pthread pattern. Choose from:
+**`pthread_create(&tid1, NULL, thread, &n)`**, **`pthread_create(&tid2, NULL, thread, &n)`**,
+**`pthread_join(tid1, NULL)`**, **`pthread_join(tid2, NULL)`**
+
+```c
+pthread_t tid1, tid2;
+long n = 100000;
+1)________________________;
+2)________________________;
+3)________________________;
+4)________________________;
+```
+
 ---
 
 ## Lecture 13 — Synchronization Issues
@@ -526,6 +704,20 @@ if (p->left->id < p->right->id) {
 5. What is the standard remedy for #4? → ____________
 6. On a single-semaphore progress graph, what is the "forbidden region"? → ____________
 
+### P13.3 [4 × 2pt] Reference Code Fill-in — Thread-Safe Wrapper
+
+Complete the lecture's wrapper for a function that returns a pointer to a static buffer. Choose from:
+**`sem_wait(&mutex)`**, **`strcpy(buf, ftos(f))`**, **`sem_post(&mutex)`**, **`return buf`**
+
+```c
+char *ftos_ts(float f, char *buf) {
+    1)________________________;
+    2)________________________;
+    3)________________________;
+    4)________________________;
+}
+```
+
 ---
 
 ## Lecture 14 — The Memory Hierarchy
@@ -550,6 +742,19 @@ Useful facts: `512=2^9`, `128=2^7`, `1,024=2^10`, `1 MiB=2^20 bytes`, `1 minute=
 4. Compute the **average transfer time** for one sector (ms), using 100 sectors/track: → ____________
 5. Compute total **average access time** (ms): → ____________
 6. Roughly how many times slower is a disk access than a DRAM access (order of magnitude)? → ____________
+
+### P14.3 [4 × 2pt] Reference Code Fill-in — Row-Major Locality
+
+Complete the lecture's cache-friendly row-major traversal. Choose from:
+**`i < M`**, **`j = 0`**, **`j < N`**, **`sum += a[i][j]`**
+
+```c
+for (i = 0; 1)________________________; i++) {
+    for (2)________________________; 3)________________________; j++) {
+        4)________________________;
+    }
+}
+```
 
 ---
 
@@ -579,6 +784,20 @@ A tiny direct-mapped cache has `(S, E, B, m) = (4, 1, 2, 4)` (so b=1, s=2, t=1).
 5. **Write-through** vs **write-back** — which defers the write to the lower level until eviction? → ____________
 6. Why are the **middle** address bits (not the high bits) used as the set index? → ____________
 
+### P15.3 [5 × 2pt] Reference Code Fill-in — Cache Initialization
+
+Complete the simple cache-field initialization from the lecture exercise. Choose from:
+**`m - s - b`**, **`1 << s`**, **`(1 << s) - 1`**, **`(1 << b) - 1`**, **`init_cache_set(c->sets + i, E, 1 << b)`**
+
+```c
+c->t = 1)________________________;
+c->ns = 2)________________________;
+c->mask_set = 3)________________________;
+c->mask_off = 4)________________________;
+for (int i = 0; i < c->ns; i++)
+    5)________________________;
+```
+
 ---
 
 ## Lecture 16 — Virtual Memory
@@ -606,6 +825,19 @@ For #6, choose from: **PTBR, MMU, TLB**
 4. What is the **total size** of this page table? → ____________
 5. List, in order, the page-fault handler's steps (victim selection onward): → ____________
 6. Which register points to the base of the current page table? → ____________
+
+### P16.3 [4 × 2pt] Reference Code Fill-in — Split a Virtual Address
+
+Complete the paging expressions from the lecture exercise. Choose from:
+**`ADRSBITS - VPNBITS`**, **`1 << VPOBITS`**, **`(vadrs >> VPOBITS) & ms->mask_vpn`**, **`vadrs & ms->mask_vpo`**
+
+```c
+#define VPOBITS   1)________________________
+#define PAGESIZE  2)________________________
+
+word_t vpn = 3)________________________;
+word_t vpo = 4)________________________;
+```
 
 ---
 
@@ -636,6 +868,21 @@ For exact terms, choose from:
 5. In copy-on-write, what triggers the actual page copy, and what fault type is it? → ____________
 6. During `execve`, the `.bss` area is mapped to what kind of file (demand-zero)? → ____________
 
+### P17.3 [5 × 2pt] Reference Code Fill-in — Shared `mmap`
+
+Complete the lecture's shared-memory mapping pattern. Choose from:
+**`fork()`**, **`mmap(NULL, 100, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0)`**,
+**`close(fd)`**, **`strcpy(ptr, "Hello world")`**, **`munmap(ptr, 100)`**
+
+```c
+if (1)________________________ == 0) {
+    char *ptr = 2)________________________;
+    3)________________________;
+    4)________________________;
+    5)________________________;
+}
+```
+
 ---
 ---
 
@@ -650,6 +897,9 @@ For exact terms, choose from:
 
 **P1.2** 1) **Pre-processor (cpp)** 2) **Compiler (cc1)** 3) **Assembler (as)** 4) **Linker (ld)** 5) **`-S`**
 > `gcc -E` = preprocess only, `gcc -S` = compile to assembly, `gcc -c` = assemble to object, `gcc` (no flag) = link.
+
+**P1.3** 1) **`gcc -E hello.c -o hello.i`** 2) **`gcc -S hello.i`** 3) **`gcc -c hello.s`** 4) **`gcc hello.o`**
+> The flags stop after preprocessing, assembly generation, or object generation; the final command invokes the linker.
 
 ---
 
@@ -671,6 +921,9 @@ For exact terms, choose from:
 5) Use **`data | 0x80`**; `0x05 | 0x80 = 0x85`.
 6) `~5 = -(5 + 1) =` **-6**.
 
+**P2.3** 1) **`scanf("%99s", name)`** 2) **`scanf("%d", &num)`** 3) **`printf("read %d.\n", num)`** 4) **`return 0`**
+> An array name already acts as its first-element address, while an integer variable needs `&num` for `scanf`.
+
 ---
 
 ## Lecture 03
@@ -680,6 +933,9 @@ For exact terms, choose from:
 
 **P3.2** 1) **.data** 2) **.bss** 3) **.data** 4) **.rodata** 5) **stack** 6) **.data** 7) **heap**
 > Initialized globals/statics → `.data`; uninitialized → `.bss`; `const` initialized → `.rodata`; auto locals → stack; local `static` keeps global lifetime so it goes to `.data`; `malloc`'d block → heap. (The pointer variable `p` itself would be on the stack.)
+
+**P3.3** 1) **`*a`** 2) **`*b`** 3) **`buf + next`** 4) **`next += n`**
+> `swap` changes pointed-to values, while `getbuf` returns the next region of its static buffer and advances the index.
 
 ---
 
@@ -701,6 +957,9 @@ For exact terms, choose from:
 5) `jle` is taken when `SF != OF` **or** `ZF == 1` (signed less-than-or-equal).
 6) Because the C condition `i < 10` is implemented as "loop again while `i <= 9`," so it compares against 9 with `jle`.
 
+**P4.3** 1) **`movl -4(%rbp), %eax`** 2) **`addl %eax, -8(%rbp)`** 3) **`addl $1, -4(%rbp)`** 4) **`jle .L10`**
+> The loop loads `i`, adds it to `s`, increments `i`, then jumps back while the signed comparison is `i <= 9`.
+
 ---
 
 ## Lecture 05
@@ -715,6 +974,9 @@ For exact terms, choose from:
 
 **P5.2** 1) **CALLER** 2) **CALLEE** 3) **CALLEE** 4) **CALLEE** 5) **CALLER**
 > Caller pushes args + does `call` (which pushes return address). Callee sets up/tears down its own stack frame.
+
+**P5.3** 1) **`movl -4(%rbp), %edx`** 2) **`movl %eax, %esi`** 3) **`leaq .LC0(%rip), %rdi`** 4) **`call printf@PLT`**
+> `printf` receives the format in `%rdi`, then the integer arguments in `%rsi` and `%rdx`.
 
 ---
 
@@ -736,6 +998,9 @@ For exact terms, choose from:
 5) **B** (memory leak — first block's address is lost before it can be freed)
 6) **O** (correct order: free inner strings first, then the array)
 
+**P6.3** 1) **`malloc(n * sizeof(char*))`** 2) **`strdup(word)`** 3) **`free(words[i])`** 4) **`free(words)`**
+> Allocate the outer pointer array and each inner string; free the inner allocations before the outer array.
+
 ---
 
 ## Lecture 07
@@ -756,6 +1021,9 @@ For exact terms, choose from:
 5) Sweep frees every block that was **not marked** (unreachable) in the Mark phase.
 6) It is **unreachable** from any root (stack/global) variable — no path of pointers leads to it.
 
+**P7.3** 1) **`((size) | (alloc))`** 2) **`(GET(p) & ~0x7)`** 3) **`((char *)(bp) - WSIZE)`** 4) **`((char *)(bp) + GET_SIZE(HDRP(bp)))`**
+> The low bits store flags; masking recovers size, and pointer arithmetic moves between payloads and metadata.
+
 ---
 
 ## Lecture 08
@@ -769,6 +1037,9 @@ For exact terms, choose from:
 4) **Descriptor table** (per-process), **Open file table** (file position + refcount, shared), **v-node table** (file metadata).
 5) **Shared** position (they share the same open-file-table entry).
 6) **Separate** positions (each open creates its own open-file-table entry).
+
+**P8.3** 1) **`read(STDIN_FILENO, buf, sizeof(buf))`** 2) **`open("foo.txt", O_CREAT|O_WRONLY, S_IRUSR|S_IWUSR)`** 3) **`write(fd, buf + i, n - i)`** 4) **`close(fd)`**
+> `write` may produce a short count, so the loop advances by the number actually written until all `n` bytes are handled.
 
 ---
 
@@ -785,6 +1056,9 @@ For exact terms, choose from:
 5) **Zombie** process.
 6) `wait()` or `waitpid()`.
 
+**P9.3** 1) **`fork()`** 2) **`pid == 0`** 3) **`execve(argv[0], argv, NULL)`** 4) **`waitpid(pid, NULL, 0)`**
+> The child replaces its image with the requested program; the parent waits and reaps that child.
+
 ---
 
 ## Lecture 10
@@ -798,6 +1072,9 @@ For exact terms, choose from:
 4) `sigsuspend(&prev)`
 5) `while (waitpid(-1, NULL, 0) > 0) ;` — following the lecture pattern, repeat `waitpid` so one handler invocation reaps **all** children rather than only one.
 6) Library functions in the main flow may have set `errno`; a handler that calls `errno`-setting functions could clobber it. Save on entry, restore before return so the interrupted code sees a consistent `errno`.
+
+**P10.3** 1) **`errno`** 2) **`waitpid(-1, NULL, 0)`** 3) **`prnmsg("Reaped a child\n")`** 4) **`olderrno`**
+> The loop handles non-queued `SIGCHLD` events, while saving/restoring `errno` protects interrupted code.
 
 ---
 
@@ -813,6 +1090,9 @@ For exact terms, choose from:
 5) `htons` (host-to-network short).
 6) **Big-endian** (network byte order).
 7) The **listening descriptor** is created once and accepts connection requests; the **connected descriptor** is returned by `accept` and is used for actual I/O with one specific client.
+
+**P11.3** 1) **`accept(sfd, (struct sockaddr*)&caddr, &clen)`** 2) **`fork() == 0`** 3) **`close(sfd)`** 4) **`close(cfd)`**
+> The child handles one connected client and does not need the listening descriptor; the parent keeps listening and closes its copy of `cfd`.
 
 ---
 
@@ -834,6 +1114,9 @@ For exact terms, choose from:
 5) All threads dereference the same `&i`; by the time a thread reads it, `main` may have incremented `i` → wrong/duplicate ids. Fix: give each thread its **own** `id[i]` element to point at.
 6) The local-accumulation version touches the shared variable only **once** at the end, avoiding synchronization, contention, and possible blocking on **every** iteration.
 
+**P12.3** 1) **`pthread_create(&tid1, NULL, thread, &n)`** 2) **`pthread_create(&tid2, NULL, thread, &n)`** 3) **`pthread_join(tid1, NULL)`** 4) **`pthread_join(tid2, NULL)`**
+> Create both workers first so they can run concurrently, then join each to wait for completion and reap resources.
+
 ---
 
 ## Lecture 13
@@ -853,6 +1136,9 @@ For exact terms, choose from:
 4) The handler runs to completion before the main flow resumes, but the main flow holds the lock and can't release it until it resumes → both stuck (deadlock).
 5) **Block/disable the relevant signal** while the normal flow accesses the shared resource, so the handler cannot interrupt while the lock is held. The handler itself should avoid locks and other non-async-signal-safe operations.
 6) The region of the progress graph where **both** threads would be inside the same critical section simultaneously — trajectories must not enter it (the semaphore prevents this).
+
+**P13.3** 1) **`sem_wait(&mutex)`** 2) **`strcpy(buf, ftos(f))`** 3) **`sem_post(&mutex)`** 4) **`return buf`**
+> The mutex protects the static result long enough to copy it into caller-provided storage before another thread overwrites it.
 
 ---
 
@@ -874,6 +1160,9 @@ For exact terms, choose from:
 5) `T_access = 5 + 5 + 0.1 = 10.1 ms`.
 6) `10 ms / 100 ns = 100,000`, so disk access is roughly **10⁵ times** slower.
 
+**P14.3** 1) **`i < M`** 2) **`j = 0`** 3) **`j < N`** 4) **`sum += a[i][j]`**
+> Row-major C arrays store each row contiguously, so the inner loop should walk columns with stride 1.
+
 ---
 
 ## Lecture 15
@@ -893,6 +1182,9 @@ For exact terms, choose from:
 4) **100% miss rate**; stride-N column-major traversal loses **spatial locality** in the lecture's example.
 5) **Write-back** defers the write until eviction (needs a dirty bit); write-through writes immediately.
 6) Middle bits spread **contiguous** memory blocks across **different** sets, improving utilization; high-order indexing would map a contiguous run to the same set → conflict misses.
+
+**P15.3** 1) **`m - s - b`** 2) **`1 << s`** 3) **`(1 << s) - 1`** 4) **`(1 << b) - 1`** 5) **`init_cache_set(c->sets + i, E, 1 << b)`**
+> The address fields satisfy `m=t+s+b`; bit masks of `n` low bits are `(1<<n)-1`.
 
 ---
 
@@ -914,6 +1206,9 @@ For exact terms, choose from:
 5) Select a **victim page** (write it to disk if dirty, clear its valid bit), copy the requested virtual page into the physical frame, update the PTE, then **restart** the faulting instruction.
 6) **PTBR** (Page Table Base Register; CR3 on x86).
 
+**P16.3** 1) **`ADRSBITS - VPNBITS`** 2) **`1 << VPOBITS`** 3) **`(vadrs >> VPOBITS) & ms->mask_vpn`** 4) **`vadrs & ms->mask_vpo`**
+> Shifting removes the offset to expose the VPN; masking the low bits extracts the VPO.
+
 ---
 
 ## Lecture 17
@@ -934,7 +1229,10 @@ For exact terms, choose from:
 5) A **write** to a COW page triggers a **protection fault**; the handler makes a fresh private copy, fixes the PTE, restores write permission, and restarts.
 6) An **anonymous file** (demand-zero), of the size recorded in the executable.
 
+**P17.3** 1) **`fork()`** 2) **`mmap(NULL, 100, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0)`** 3) **`close(fd)`** 4) **`strcpy(ptr, "Hello world")`** 5) **`munmap(ptr, 100)`**
+> `MAP_SHARED` lets the parent observe the child's write; the file descriptor may be closed after mapping, and `munmap` removes the mapping.
+
 ---
 
-> 끝! 이 34문제로 강의 1~17이 모두 한 번씩은 짚여요.
+> 끝! 이 51문제로 강의 1~17의 개념과 레퍼런스 코드를 함께 짚어요.
 > 헷갈리는 단원은 Answer Key의 해설(>로 표시된 줄)을 먼저 읽고 문제를 다시 풀어보면 효과적입니다.

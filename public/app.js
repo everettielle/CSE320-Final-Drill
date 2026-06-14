@@ -8,6 +8,9 @@ const state = {
   results: readStorage(STORAGE_RESULTS),
   loading: new Set(),
   explaining: new Set(),
+  explanationDrafts: {},
+  explanationWriters: new Map(),
+  explanationControllers: new Map(),
   lectureFilter: "all",
   statusFilter: "all",
   search: "",
@@ -92,6 +95,7 @@ function bindEvents() {
     const question = state.questions.find((item) => item.id === id);
     const card = field.closest(".question-card");
     const answer = answerObject(question);
+    state.explanationControllers.get(id)?.abort();
     answer[field.dataset.fieldId] = field.value;
     state.answers[id] = answer;
     if (state.results[id]) {
@@ -238,7 +242,16 @@ function questionCard(question) {
           >${isLoading ? "Claude 채점 중" : result ? "다시 채점하기" : "AI 채점하기"}</button>
         </div>
       </div>
-      ${result ? resultPanel(result, question.id, state.explaining.has(question.id)) : ""}
+      ${
+        result
+          ? resultPanel(
+              result,
+              question.id,
+              state.explaining.has(question.id),
+              state.explanationDrafts[question.id],
+            )
+          : ""
+      }
     </article>
   `;
 }
@@ -286,7 +299,8 @@ function answerField(question, field) {
   `;
 }
 
-function resultPanel(result, questionId, isExplaining) {
+function resultPanel(result, questionId, isExplaining, explanationDraft) {
+  const explanation = isExplaining ? { content: explanationDraft || "" } : result.explanation;
   return `
     <section class="feedback-result">
       <div class="score-block">
@@ -316,15 +330,33 @@ function resultPanel(result, questionId, isExplaining) {
             data-explain="${questionId}"
             type="button"
             ${isExplaining ? "disabled" : ""}
-          >${isExplaining ? "Claude가 해설 중" : result.explanation ? "해설 다시 받기" : "왜 이 답이 맞나요?"}</button>
+          >${isExplaining ? "Claude가 해설 작성 중" : result.explanation ? "해설 다시 받기" : "왜 이 답이 맞나요?"}</button>
         </div>
-        ${result.explanation ? explanationPanel(result.explanation) : ""}
+        ${explanation ? explanationPanel(explanation, questionId, isExplaining) : ""}
       </div>
     </section>
   `;
 }
 
-function explanationPanel(explanation) {
+function explanationPanel(explanation, questionId, isStreaming) {
+  if (typeof explanation.content === "string") {
+    return `
+      <section class="explanation-result ${isStreaming ? "is-streaming" : ""}">
+        <div class="explanation-heading">
+          <span>WHY IT WORKS</span>
+          <strong>${isStreaming ? "개념부터 해설하는 중" : "정답 해설"}</strong>
+        </div>
+        <div class="explanation-stream">
+          <p data-explanation-stream="${questionId}">${
+            explanation.content
+              ? escapeHtml(explanation.content)
+              : "핵심 개념부터 차근차근 설명을 준비하고 있습니다..."
+          }</p>
+        </div>
+      </section>
+    `;
+  }
+
   return `
     <section class="explanation-result">
       <div class="explanation-heading">
@@ -402,6 +434,10 @@ async function explainQuestion(questionId) {
   const answer = serializeAnswer(question);
   if (!answer) return false;
 
+  const controller = new AbortController();
+  state.explanationControllers.set(questionId, controller);
+  state.explanationDrafts[questionId] = "";
+  createTypewriter(questionId);
   state.explaining.add(questionId);
   renderQuestions();
 
@@ -410,26 +446,137 @@ async function explainQuestion(questionId) {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ questionId, answer }),
+      signal: controller.signal,
     });
-    const payload = await response.json();
     if (!response.ok) {
+      const payload = await response.json().catch(() => ({}));
       throw new Error(payload.error || "해설 요청에 실패했습니다.");
     }
+    const metadata = await readExplanationStream(response, (text) => {
+      enqueueTypewriter(questionId, text);
+    });
+    await finishTypewriter(questionId);
     if (!state.results[questionId] || serializeAnswer(question) !== answer) {
       showToast("답안이 변경되어 해설을 저장하지 않았습니다.");
       return false;
     }
-    state.results[questionId].explanation = payload;
+    state.results[questionId].explanation = {
+      content: state.explanationDrafts[questionId],
+      ...metadata,
+    };
     writeStorage(STORAGE_RESULTS, state.results);
     showToast(`${questionId} 정답 해설을 만들었습니다.`);
     return true;
   } catch (error) {
-    showToast(error.message);
+    if (error.name !== "AbortError") showToast(error.message);
     return false;
   } finally {
+    state.explanationControllers.delete(questionId);
+    state.explanationWriters.delete(questionId);
     state.explaining.delete(questionId);
+    delete state.explanationDrafts[questionId];
     renderQuestions();
   }
+}
+
+async function readExplanationStream(response, onDelta) {
+  if (!response.body) throw new Error("해설 스트림을 열지 못했습니다.");
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let metadata = {};
+
+  function consumeEvent(block) {
+    const lines = block.split(/\r?\n/);
+    const event = lines.find((line) => line.startsWith("event:"))?.slice(6).trim();
+    const data = lines
+      .filter((line) => line.startsWith("data:"))
+      .map((line) => line.slice(5).trimStart())
+      .join("\n");
+    if (!data) return;
+
+    const payload = JSON.parse(data);
+    if (event === "delta") onDelta(payload.text || "");
+    if (event === "done") metadata = payload;
+    if (event === "error") throw new Error(payload.error || "해설 요청에 실패했습니다.");
+  }
+
+  while (true) {
+    const { done, value } = await reader.read();
+    buffer += decoder.decode(value, { stream: !done });
+
+    let boundary = buffer.search(/\r?\n\r?\n/);
+    while (boundary !== -1) {
+      const block = buffer.slice(0, boundary);
+      const separator = buffer.slice(boundary).match(/^\r?\n\r?\n/)?.[0] || "\n\n";
+      buffer = buffer.slice(boundary + separator.length);
+      consumeEvent(block);
+      boundary = buffer.search(/\r?\n\r?\n/);
+    }
+
+    if (done) break;
+  }
+
+  if (buffer.trim()) consumeEvent(buffer);
+  return metadata;
+}
+
+function createTypewriter(questionId) {
+  let resolveDrain;
+  const drain = new Promise((resolve) => {
+    resolveDrain = resolve;
+  });
+  state.explanationWriters.set(questionId, {
+    queue: "",
+    running: false,
+    finished: false,
+    drain,
+    resolveDrain,
+  });
+}
+
+function enqueueTypewriter(questionId, text) {
+  const writer = state.explanationWriters.get(questionId);
+  if (!writer || !text) return;
+  writer.queue += text;
+  runTypewriter(questionId);
+}
+
+function runTypewriter(questionId) {
+  const writer = state.explanationWriters.get(questionId);
+  if (!writer || writer.running) return;
+  writer.running = true;
+
+  function tick() {
+    const current = state.explanationWriters.get(questionId);
+    if (!current) return;
+
+    if (current.queue.length) {
+      const count = Math.min(12, Math.max(1, Math.ceil(current.queue.length / 45)));
+      const text = current.queue.slice(0, count);
+      current.queue = current.queue.slice(count);
+      state.explanationDrafts[questionId] += text;
+      const target = document.querySelector(`[data-explanation-stream="${questionId}"]`);
+      if (target) target.textContent = state.explanationDrafts[questionId];
+      window.setTimeout(tick, 14);
+      return;
+    }
+
+    current.running = false;
+    if (current.finished) current.resolveDrain();
+  }
+
+  window.requestAnimationFrame(tick);
+}
+
+function finishTypewriter(questionId) {
+  const writer = state.explanationWriters.get(questionId);
+  if (!writer) return Promise.resolve();
+  writer.finished = true;
+  runTypewriter(questionId);
+  if (!writer.queue.length && !writer.running) writer.resolveDrain();
+  return writer.drain;
 }
 
 async function gradeAllAnswered() {
@@ -474,7 +621,7 @@ function updateStats() {
   const correct = state.questions.filter(
     (question) => state.results[question.id]?.verdict === "correct",
   ).length;
-  const total = state.questions.length || 34;
+  const total = state.questions.length || 51;
   const percent = Math.round((answered / total) * 100);
 
   elements.answeredCount.textContent = answered;

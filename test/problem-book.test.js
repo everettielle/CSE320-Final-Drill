@@ -15,10 +15,10 @@ test("parses all lectures, problems, and reference answers", () => {
   const book = parseProblemBook(markdown);
 
   assert.equal(book.lectures.length, 17);
-  assert.equal(book.questions.length, 34);
+  assert.equal(book.questions.length, 51);
   assert.equal(book.questions[0].id, "P1.1");
   assert.match(book.questions[0].referenceAnswer, /ISA/);
-  assert.equal(book.questions.at(-1).id, "P17.2");
+  assert.equal(book.questions.at(-1).id, "P17.3");
 });
 
 test("includes all source lecture notes under data/lectures", () => {
@@ -33,6 +33,19 @@ test("includes all source lecture notes under data/lectures", () => {
   assert.equal(lectureFiles.at(-1), "Lecture17_VirtualMemory2.md");
 });
 
+test("includes the supplied past-exam source files", () => {
+  const examDir = path.join(__dirname, "..", "data", "exams");
+  const examFiles = fs
+    .readdirSync(examDir)
+    .filter((name) => /^CSE320_Midterm\d+_Problems\.md$/.test(name))
+    .sort();
+
+  assert.deepEqual(examFiles, [
+    "CSE320_Midterm1_Problems.md",
+    "CSE320_Midterm2_Problems.md",
+  ]);
+});
+
 test("does not expose reference answers in the public exam payload", () => {
   const publicExam = toPublicExam(parseProblemBook(markdown));
 
@@ -45,6 +58,7 @@ test("extracts structured answer fields for every sub-question", () => {
   const book = parseProblemBook(markdown);
   const p31 = book.questions.find((question) => question.id === "P3.1");
   const p61 = book.questions.find((question) => question.id === "P6.1");
+  const codeFillQuestions = book.questions.filter((question) => question.id.endsWith(".3"));
 
   assert.ok(book.questions.every((question) => question.answerFields.length > 0));
   assert.equal(p31.answerFields.length, 6);
@@ -52,6 +66,12 @@ test("extracts structured answer fields for every sub-question", () => {
   assert.deepEqual(
     p61.answerFields.map((field) => field.type),
     ["code", "code", "code", "code", "long", "short"],
+  );
+  assert.equal(codeFillQuestions.length, 17);
+  assert.ok(
+    codeFillQuestions.every((question) =>
+      question.answerFields.every((field) => field.type === "code"),
+    ),
   );
 });
 
@@ -71,6 +91,7 @@ test("keeps recall and calculation questions no-cheatsheet friendly", () => {
 test("keeps the audited problem set internally consistent", () => {
   const book = parseProblemBook(markdown);
   const byId = new Map(book.questions.map((question) => [question.id, question]));
+  const questionsPerLecture = new Map();
 
   for (const question of book.questions) {
     const statedCount = Number.parseInt(question.pointsLabel, 10);
@@ -78,9 +99,15 @@ test("keeps the audited problem set internally consistent", () => {
     assert.equal(question.answerFields.length, expectedCount, question.id);
     assert.doesNotMatch(question.referenceAnswer, /^## Lecture/m, question.id);
     assert.doesNotMatch(question.referenceAnswer, /끝!/, question.id);
+    questionsPerLecture.set(
+      question.lectureId,
+      (questionsPerLecture.get(question.lectureId) || 0) + 1,
+    );
   }
 
+  assert.deepEqual([...questionsPerLecture.values()], Array(17).fill(3));
   assert.match(byId.get("P7.1").referenceAnswer, /0x21/);
+  assert.match(byId.get("P7.3").referenceAnswer, /GET\(p\) & ~0x7/);
   assert.match(byId.get("P10.2").referenceAnswer, /waitpid\(-1, NULL, 0\)/);
   assert.match(byId.get("P12.1").referenceAnswer, /TID, \*\*stack\*\*/);
   assert.match(byId.get("P13.1").referenceAnswer, /rewriting it as a \*\*reentrant\*\* function/);
